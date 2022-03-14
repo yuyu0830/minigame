@@ -4,7 +4,8 @@ WIDTH = 1280
 HEIGHT = 720
 SIZE = [WIDTH, HEIGHT]
 TITLE = "SH mini game"
-FRAME = 50
+FRAME = 100
+
 
 def isin(v, a, b):
     if v > a and v < b: return True
@@ -24,9 +25,12 @@ class set():
 
         # 인게임 변수
         self.running = True
-        self.state = 1 
+        self.state = 2
         self.pressed_key = []
-        self.lastkey = 0
+        self.lastkey = []
+        self.usedkey = [pg.K_d, pg.K_f, pg.K_j, pg.K_k]
+        self.speed = 14
+
         
         # start_버튼 이미지
         # self.start_load = pg.image.load("first_copy/image/start_load.png")
@@ -47,6 +51,7 @@ class set():
 
         self.img_pad_line = pg.image.load("first_copy/image/pad_line.png")
         self.img_red_line = pg.image.load("first_copy/image/red_line.png")
+        self.img_health_bar = pg.image.load("first_copy/image/img_health_bar.png")
         self.img_notepad = [] # No, Ce, Sd
         self.img_notepad.append(pg.image.load("first_copy/image/note_pad.png"))
         self.img_notepad.append(pg.image.load("first_copy/image/nomal_note_pad.png"))
@@ -62,11 +67,17 @@ class set():
         self.img_mani.append(pg.image.load("first_copy/image/menu1.png"))
         self.img_mani.append(pg.image.load("first_copy/image/menu0.png"))
         self.img_mani.append(pg.image.load("first_copy/image/menu2.png")) 
+        self.white_num = []
+        self.black_num = []
+        for i in range(10):
+            self.white_num.append(pg.image.load("first_copy/image/n_w_{}.png".format(i)))
+            self.black_num.append(pg.image.load("first_copy/image/n_b_{}.png".format(i)))
+        self.new_song() #나중에 지우기
 
     def run(self):
         if self.state == 1: self.opening()
         elif self.state == 2: self.ingame()
-        self.lastkey = 0
+        self.lastkey = []
         pg.display.update()
 
     def opening(self):
@@ -87,14 +98,81 @@ class set():
                     if self.op_select == 0: print("easy") # easy
                     elif self.op_select == 1: print("normal") # easy
                     else: print("hard") # easy
+                    self.new_song()
                     self.state = 2 # goto ingame!
 
             elif self.lastkey == pg.K_ESCAPE:
                 self.menu_state = 0
-        
-    def ingame(self):
-        pass
+    
+    def new_song(self):
+        self.note_num = 0
+        self.bpm = 128
+        self.bps = 60 / self.bpm
+        self.start_ticks = pg.time.get_ticks()
+        self.temp_song = [[4.0, 1], [24.0, 3]] #timing, line
+        self.next_note = self.temp_song[0]
+        self.inscreen_note = [] #height, line
+        self.last_score = 0
+        self.score = 0
+        self.life = 100
 
+    def ingame(self):
+        self.update()
+        self.draw()
+
+    def update(self):
+        self.game_time = ((pg.time.get_ticks() - self.start_ticks) / 1000)
+        self.game_beat = self.game_time / self.bps
+        print(self.game_beat)
+        if self.next_note[0] <= self.game_time:
+            if type(self.next_note[1]) == type([]):
+                for i in range(len(self.next_note[1])):
+                    self.inscreen_note.append([0, self.next_note[1][i]])
+            else:
+                self.inscreen_note.append([0, self.next_note[1]])
+            self.note_num += 1
+            self.next_note = self.temp_song[self.note_num]
+        self.life -= 0.05 #난이도에 맞춰 속도 조절
+
+    def draw(self):
+        self.screen.blit(self.bg_ingame, [0, 0])
+        self.screen.blit(self.img_notepad[0], [421, 598])
+        self.screen.blit(self.img_health_bar, [860, 0])
+        pg.draw.rect(self.screen, [255, 147, 30], [868, 8, (404 * self.life * 0.01), 32])
+        temp = self.score
+        for i in range(6):
+            self.screen.blit(self.white_num[temp % 10], [1260-(i*25), 50])
+            temp = temp // 10
+        pg.rect.Rect
+        for i in range(4):
+            if self.usedkey[i] in self.pressed_key:
+                self.screen.blit(self.img_pad_line, [420+(110*i), 0])
+        if self.last_score != 0:
+            self.screen.blit(self.img_score[self.last_score - 1], [515, 100])
+        self.draw_note()
+
+    def draw_note(self):
+        delete_list = []
+        for i, [h, line] in enumerate(self.inscreen_note):
+            self.screen.blit(self.img_note[0 if line in[1, 2] else 1], [420+(110*line), h])
+            if isin(self.inscreen_note[i][0], 500, 670) and self.usedkey[line] in self.lastkey:
+                delete_list.append(i)
+                if isin(h, 610, 650): a, b = 1, 4
+                elif isin(h, 575, 660): a, b = 2, 2
+                elif isin(h, 525, 670): a, b = 3, 1
+                self.last_score = a
+                self.score += int(100 - abs(625 - h))
+                self.life += b
+                if self.life > 100: self.life = 100
+
+            elif self.inscreen_note[i][0] <= 720: 
+                self.inscreen_note[i][0] += self.speed
+            else: 
+                delete_list.append(i)
+                self.life -= 5
+        for i in reversed(delete_list):
+            self.inscreen_note.pop(i)
+        
 g = set()
 while g.running:
     g.clock.tick(FRAME)
@@ -103,8 +181,15 @@ while g.running:
             g.running = False
         if event.type == pg.KEYDOWN:
             g.pressed_key.append(event.key)
-            g.lastkey = event.key
+            g.lastkey.append(event.key)
         if event.type == pg.KEYUP:
             g.pressed_key.remove(event.key)
 
     g.run()
+
+
+#할일
+# 콤보 만들기
+# 점수 구현
+# 맞출 경우 효과
+# 목숨 만들기
