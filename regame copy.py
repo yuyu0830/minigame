@@ -4,7 +4,7 @@ WIDTH = 1280
 HEIGHT = 720
 SIZE = [WIDTH, HEIGHT]
 TITLE = "SH mini game"
-FRAME = 100
+FRAME = 120
 
 
 def isin(v, a, b):
@@ -29,7 +29,7 @@ class set():
         self.pressed_key = []
         self.lastkey = []
         self.usedkey = [pg.K_d, pg.K_f, pg.K_j, pg.K_k]
-        self.speed = 14
+        self.speed = 10
 
         
         # start_버튼 이미지
@@ -85,12 +85,12 @@ class set():
         elif self.menu_state == 1: self.screen.blit(self.bg_ready[self.op_select], [0, 0])
         else: self.screen.blit(self.bg_instruction, [0, 0])
     
-        if self.lastkey != 0:
-            if self.lastkey == pg.K_LEFT:
+        if self.lastkey != []:
+            if pg.K_LEFT in self.lastkey:
                 self.op_select -= 1 if self.op_select != 0 else 0
-            elif self.lastkey == pg.K_RIGHT:
+            elif pg.K_RIGHT in self.lastkey:
                 self.op_select += 1 if self.op_select != 2 else 0
-            elif self.lastkey == pg.K_SPACE:
+            elif pg.K_SPACE in self.lastkey:
                 if self.menu_state == 0: # when main
                     if self.op_select == 0: self.menu_state = 1 # main to ready
                     elif self.op_select == 1: self.menu_state = 2 # main to instruction
@@ -101,7 +101,7 @@ class set():
                     self.new_song()
                     self.state = 2 # goto ingame!
 
-            elif self.lastkey == pg.K_ESCAPE:
+            elif pg.K_ESCAPE in self.lastkey:
                 self.menu_state = 0
     
     def new_song(self):
@@ -109,21 +109,21 @@ class set():
         self.bpm = 128
         self.bps = 60 / self.bpm
         self.start_ticks = pg.time.get_ticks()
-        self.temp_song = [[4.0, 1], [24.0, 3]] #timing, line
+        self.temp_song = [[2.0, 1], [2.2, [1, 3]], [2.3, 2], [2.7, [0, 2]], [3.0, 1], [4.0, 1], [4.0, 1], [24.0, 3]] #timing, line
         self.next_note = self.temp_song[0]
         self.inscreen_note = [] #height, line
         self.last_score = 0
         self.score = 0
         self.life = 100
-
+        
     def ingame(self):
         self.update()
         self.draw()
-
+        
     def update(self):
         self.game_time = ((pg.time.get_ticks() - self.start_ticks) / 1000)
         self.game_beat = self.game_time / self.bps
-        print(self.game_beat)
+
         if self.next_note[0] <= self.game_time:
             if type(self.next_note[1]) == type([]):
                 for i in range(len(self.next_note[1])):
