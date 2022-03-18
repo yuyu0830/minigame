@@ -32,29 +32,30 @@ class set():
         self.pressed_key = []
         self.lastkey = []
         self.usedkey = [pg.K_d, pg.K_f, pg.K_j, pg.K_k]
-        self.speed = 2
+        self.speed = 1
 
-        self.height = 565
+        self.height = 620
         self.timing = 565
+        self.gap = self.height - self.timing
 
         #메뉴 이미지
-        self.bg_instruction = pg.image.load("first_copy/image/instruction.png")
-        self.bg_gameover = [] # Yes, No
-        self.bg_gameover.append(pg.image.load("first_copy/image/game_over_screen_yes.png"))
-        self.bg_gameover.append(pg.image.load("first_copy/image/game_over_screen_no.png"))
-        self.bg_ready = [] # Nor, Eas, Har
-        self.bg_ready.append(pg.image.load("first_copy/image/ready_screen_easy.png"))
-        self.bg_ready.append(pg.image.load("first_copy/image/ready_screen_nomal.png"))
-        self.bg_ready.append(pg.image.load("first_copy/image/ready_screen_hard.png"))
-        self.bg_menu = [] # Str, Dis, Exi
-        self.bg_menu.append(pg.image.load("first_copy/image/background1.png"))
-        self.bg_menu.append(pg.image.load("first_copy/image/background0.png")) 
-        self.bg_menu.append(pg.image.load("first_copy/image/background2.png"))
+        # self.bg_instruction = pg.image.load("first_copy/image/instruction.png")
+        # self.bg_gameover = [] # Yes, No
+        # self.bg_gameover.append(pg.image.load("first_copy/image/game_over_screen_yes.png"))
+        # self.bg_gameover.append(pg.image.load("first_copy/image/game_over_screen_no.png"))
+        # self.bg_ready = [] # Nor, Eas, Har
+        # self.bg_ready.append(pg.image.load("first_copy/image/ready_screen_easy.png"))
+        # self.bg_ready.append(pg.image.load("first_copy/image/ready_screen_nomal.png"))
+        # self.bg_ready.append(pg.image.load("first_copy/image/ready_screen_hard.png"))
+        # self.bg_menu = [] # Str, Dis, Exi
+        # self.bg_menu.append(pg.image.load("first_copy/image/background1.png"))
+        # self.bg_menu.append(pg.image.load("first_copy/image/background0.png")) 
+        # self.bg_menu.append(pg.image.load("first_copy/image/background2.png"))
 
-        self.img_mani = [] # C, L, R
-        self.img_mani.append(pg.image.load("first_copy/image/menu1.png"))
-        self.img_mani.append(pg.image.load("first_copy/image/menu0.png"))
-        self.img_mani.append(pg.image.load("first_copy/image/menu2.png")) 
+        # self.img_mani = [] # C, L, R
+        # self.img_mani.append(pg.image.load("first_copy/image/menu1.png"))
+        # self.img_mani.append(pg.image.load("first_copy/image/menu0.png"))
+        # self.img_mani.append(pg.image.load("first_copy/image/menu2.png")) 
 
         #인게임 이미지
         self.bg_ingame = pg.image.load("first_copy/image/inGame/background.png")
@@ -115,26 +116,29 @@ class set():
 
             elif pg.K_ESCAPE in self.lastkey:
                 self.menu_state = 0
-    
+
     def new_song(self):
         self.note_num = 0
         self.song_note = [[0.5, 0], [1.0, 1], [1.5, 2], [2.0, 3], [2.5, 0], [3.0, 1], [3.5, 2], [4.0, 3], [4.5, 0], [5.0, 1], [5.5, 2], [6.0, 3]]
         self.bpm = 128
         self.bps = round(self.bpm / 60, 3)
+        self.note_speed = round((60 / self.bpm) * self.speed, 3)
         self.start_ticks = pg.time.get_ticks()
+        self.inscreen_note = []
         self.metro = [4, 4]
         self.last_score = 0
         self.score = 0
         self.life = 100
-        
+
     def ingame(self):
         self.update()
         self.draw()
-        
+
     def update(self):
-        self.beat = ((pg.time.get_ticks() - self.start_ticks) * self.bps) / 1000
-        self.bar = round(self.beat % self.metro[1] / self.metro[1], 3)
-        print(self.beat)
+        self.beat = ((pg.time.get_ticks() - self.start_ticks) * self.bps) / 1000 - 4
+        self.bar = round(self.beat % self.metro[1], 3)
+        if self.song_note[self.note_num][0]:
+            pass
         self.life -= 0.05 #난이도에 맞춰 속도 조절
 
     def draw(self):
@@ -145,7 +149,7 @@ class set():
         pg.draw.rect(self.screen, [255, 147, 30], [868, 8, (404 * self.life * 0.01), 32])
         temp = self.score #Score
         for i in range(6):
-            self.screen.blit(self.white_num[temp % 10], [1260-(i*25), 50])
+            self.screen.blit(self.white_num[temp % 10], [1240-(i*25), 50])
             temp = temp // 10
 
         for i in range(4):
@@ -154,10 +158,13 @@ class set():
                 self.screen.blit(self.btn_pre[0], [BOX_POS[0]+(LINE_WIDTH*i), 620])
             else: 
                 self.screen.blit(self.btn_nor[1], [BOX_POS[0]+(LINE_WIDTH*i), 620])
-
-        temp = round((self.height * self.speed) / self.metro[1] * self.bar)
-        if temp < 565: 
+        
+        temp = (self.timing * self.speed) * (self.bar / self.metro[1])
+        if temp <= self.timing:
             pg.draw.line(self.screen, WHITE, [150, temp], [590, temp])
+        if temp <= self.gap:
+            pg.draw.line(self.screen, WHITE, [150, temp + self.timing], [590, temp + self.timing])
+        
 
         
 g = set()
