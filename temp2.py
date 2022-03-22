@@ -4,11 +4,19 @@ from pygame.locals import *
 
 WIDTH = 1280
 HEIGHT = 720
-SIZE = [WIDTH, HEIGHT]
 TITLE = "SH mini game"
+
 WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+PINK = (255, 170, 170)
+YELLOW = (255, 255, 170)
+BLUE = (170, 200, 255)
+
 FRAME = 120
 BOX_POS = [150, 0]
+LINE = [440, 720]
+NOTE_BLOCK = [110, 25]
+BUTTON = [110, 100]
 LINE_WIDTH = 110
 
 
@@ -20,7 +28,7 @@ class set():
     # 초기화 및 변수 지정    
     def __init__(self):
         # 스크린 설정
-        self.screen = pg.display.set_mode(SIZE, HWSURFACE | DOUBLEBUF)
+        self.screen = pg.display.set_mode([WIDTH, HEIGHT], HWSURFACE | DOUBLEBUF)
         self.title = pg.display.set_caption(TITLE)
         self.clock = pg.time.Clock()
 
@@ -32,7 +40,7 @@ class set():
         self.running = True
         self.state = 2
         self.pressed_key = []
-        self.lastkey = []
+        self.last_key = []
         self.usedkey = [pg.K_d, pg.K_f, pg.K_j, pg.K_k]
         self.speed = 1
 
@@ -40,6 +48,7 @@ class set():
         self.timing = 565
         self.gap = self.line_height - self.timing
         self.load_data()
+
         #메뉴 이미지
         # self.bg_instruction = pg.image.load("first_copy/image/instruction.png")
         # self.bg_gameover = [] # Yes, No
@@ -63,24 +72,15 @@ class set():
         self.dir = os.path.dirname(__file__)
         self.img_dir = os.path.join(self.dir, "image")
         #인게임 이미지
-        self.bg_ingame = pg.image.load(os.path.join(self.img_dir, "background.png"))
         self.bg_skin = pg.image.load(os.path.join(self.img_dir, "Skin.png"))
         
-        self.img_line = pg.image.load(os.path.join(self.img_dir, "Line.png"))
         self.img_line_pre = pg.image.load(os.path.join(self.img_dir, "Line_pressed.png"))
         self.img_health_bar = pg.image.load(os.path.join(self.img_dir, "health_bar.png"))
-        self.btn_pre = [] #cen, sid
-        self.btn_pre.append(pg.image.load(os.path.join(self.img_dir, "btn_pre_cen.png")))
-        self.btn_nor = [] 
-        self.btn_nor.append(pg.image.load(os.path.join(self.img_dir, "btn_nor_cen.png")))
         self.img_score = []
         self.img_score.append(pg.image.load(os.path.join(self.img_dir, "Exerlent.png")))
         self.img_score.append(pg.image.load(os.path.join(self.img_dir, "Good.png")))
         self.img_score.append(pg.image.load(os.path.join(self.img_dir, "Bad.png")))
         self.img_score.append(pg.image.load(os.path.join(self.img_dir, "Miss.png")))
-        self.img_note = []
-        self.img_note.append(pg.image.load(os.path.join(self.img_dir, "note_cen.png")))
-        self.img_note.append(pg.image.load(os.path.join(self.img_dir, "note_sid.png")))
 
         self.num = []
         for i in range(10):
@@ -88,10 +88,54 @@ class set():
         self.new_song() #나중에 지우기
 
     def run(self):
-        if self.state == 1: self.opening()
-        elif self.state == 2: self.ingame()
-        self.lastkey = []
-        pg.display.update()
+        while self.running:
+            self.clock.tick(FRAME)
+            self.event()
+            self.update()
+            self.draw()
+            pg.display.flip()
+
+    def event(self):
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                self.running = False
+            if event.type == pg.KEYDOWN:
+                self.pressed_key.append(event.key)
+                self.last_key.append(event.key)
+            if event.type == pg.KEYUP:
+                self.pressed_key.remove(event.key)
+
+    
+    def update(self):
+        self.ingame_time = (pg.time.get_ticks() - self.start_ticks) / 1000
+        print(self.ingame_time)
+        self.last_key = []
+
+
+    def draw(self):
+        pg.draw.rect(self.screen, [50, 50, 50], [0, 0, 1280, 720])
+        pg.draw.rect(self.screen, BLACK, [BOX_POS, LINE])
+        self.screen.blit(self.img_health_bar, [860, 0])
+        self.screen.blit(self.bg_skin, [70, 0])
+        pg.draw.rect(self.screen, [255, 147, 30], [868, 8, (404 * self.life * 0.01), 32])
+        
+
+        for i in range(4):
+            if self.usedkey[i] in self.pressed_key:
+                self.screen.blit(self.img_line_pre, [BOX_POS[0]+(LINE_WIDTH*i), 220])
+                pg.draw.rect(self.screen, PINK, [[BOX_POS[0]+(LINE_WIDTH*i), 620], BUTTON])
+            else:
+                pg.draw.rect(self.screen, YELLOW, [[BOX_POS[0]+(LINE_WIDTH*i), 620], BUTTON])
+
+        for i, note in enumerate(self.inscreen_note):
+            color = WHITE if note[1] in [1, 2] else BLUE
+            pg.draw.rect(self.screen, color, [[BOX_POS[0]+(LINE_WIDTH*i), note[0]], NOTE_BLOCK])
+            self.inscreen_note[i][0] += self.note_speed
+
+        temp = self.score #Score
+        for i in range(6):
+            self.screen.blit(self.num[temp % 10], [1240-(i*25), 50])
+            temp = temp // 10
 
     def opening(self):
         if self.menu_state == 0: self.screen.blit(self.bg_menu[self.op_select], [0, 0])
@@ -131,57 +175,13 @@ class set():
         self.fps = 0
         self.last_time = 0
 
-    def ingame(self):
-        self.update()
-        self.draw()
 
-    def update(self):
-        self.ingame_time = (pg.time.get_ticks() - self.start_ticks) / 1000
-        self.fps_sum += self.ingame_time - self.last_time
-        self.fps += 1
-        self.fps_avg = round(self.fps_sum / self.fps, 3)
-        self.last_time = self.ingame_time
-        print(self.ingame_time)
-
-    def draw(self):
-        pass
-        # pg.draw.rect(self.screen, [50, 50, 50], [0, 0, 1280, 720])
-        # self.screen.blit(self.img_line, BOX_POS)
-        # self.screen.blit(self.img_health_bar, [860, 0])
-        # self.screen.blit(self.bg_skin, [70, 0])
-        # pg.draw.rect(self.screen, [255, 147, 30], [868, 8, (404 * self.life * 0.01), 32])
-        # temp = self.score #Score
-        # for i in range(6):
-        #     self.screen.blit(self.white_num[temp % 10], [1240-(i*25), 50])
-        #     temp = temp // 10
-
-        # for i in range(4):
-        #     if self.usedkey[i] in self.pressed_key:
-        #         self.screen.blit(self.img_line_pre, [BOX_POS[0]+(LINE_WIDTH*i), 220])
-        #         self.screen.blit(self.btn_pre[0], [BOX_POS[0]+(LINE_WIDTH*i), 620])
-        #     else: 
-        #         self.screen.blit(self.btn_nor[1], [BOX_POS[0]+(LINE_WIDTH*i), 620])
-        # for i, note in enumerate(self.inscreen_note):
-        #     self.screen.blit(self.img_note[0], [BOX_POS[0]+(LINE_WIDTH*i), note[0]])
-        #     self.inscreen_note[i][0] += self.note_speed
 
         
 
         
 g = set()
 while g.running:
-    g.run()
-    g.clock.tick(FRAME)
-    for event in pg.event.get():
-        if event.type == pg.QUIT:
-            print(g.fps_avg)
-            g.running = False
-        if event.type == pg.KEYDOWN:
-            g.pressed_key.append(event.key)
-            g.lastkey.append(event.key)
-        if event.type == pg.KEYUP:
-            g.pressed_key.remove(event.key)
-
     g.run()
 
 
