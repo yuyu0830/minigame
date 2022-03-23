@@ -43,7 +43,7 @@ class set():
         self.pressed_key = []
         self.last_key = []
         self.usedkey = [pg.K_d, pg.K_f, pg.K_j, pg.K_k]
-        self.speed = 2
+        self.speed = 1
 
         self.line_height = 620
         self.timing = 565
@@ -108,7 +108,7 @@ class set():
     def new_song(self):
         #Song setting
         self.song_note = [[1.0, 1], [2.0, 3], [3.0, 1], [4.0, 3], [5.0, 1], [6.0, 3], [7.0, 3], [8.0, 1], [25.0, 1]]
-        self.bpm = 240
+        self.bpm = 128
         self.bps = self.bpm / 60
         self.metro = [4, 4]
         
@@ -124,20 +124,20 @@ class set():
 
     def update(self):
         delete_list = []
-        self.ingame_time = (pg.time.get_ticks() - self.start_ticks) / 1000 -4
+        self.ingame_time = (pg.time.get_ticks() - self.start_ticks) / 1000 - 2
         self.time_gap = round(self.ingame_time - self.last_time, 3)
+        print(self.time_gap)
         self.last_time = self.ingame_time
-        if self.song_note[self.note_num][0] / self.bps- self.speed <= self.ingame_time:
+        if self.song_note[self.note_num][0] / self.bps - self.speed <= self.ingame_time:
             self.inscreen_note.append([0.0, self.song_note[self.note_num][1]])
             self.note_num += 1
         for i, note in enumerate(self.inscreen_note):
             if note[0] <= 1:
-                self.inscreen_note[i][0] += self.time_gap
+                self.inscreen_note[i][0] += (self.time_gap / self.speed)
             else:
                 delete_list.append(i)
         for i in reversed(delete_list):
             self.inscreen_note.pop(i)
-        print(self.inscreen_note)
         self.last_key = []
 
     def draw(self):
@@ -148,7 +148,7 @@ class set():
         
         for i, note in enumerate(self.inscreen_note): #Draw Note
             color = WHITE if note[1] in [1, 2] else BLUE
-            pg.draw.rect(self.screen, color, [[BOX_POS[0]+(LINE_WIDTH*note[1]), self.line_height * (note[0] / self.speed)], NOTE_BLOCK])
+            pg.draw.rect(self.screen, color, [[BOX_POS[0]+(LINE_WIDTH*note[1]), self.line_height * note[0]], NOTE_BLOCK])
 
         self.screen.blit(self.bg_skin, [70, 0])
 
